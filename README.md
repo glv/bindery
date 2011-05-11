@@ -92,7 +92,9 @@ Or perhaps you simply want to read through the [SproutCore tutorial][], but your
 
 In any of those cases, the writing will exist in a format that probably doesn't match what existing ebook generation systems expect, and in some cases it will already be in the HTML format that all popular ebook formats are based on.
 
-Bindery is designed to support those use cases, not just brand new books written with a particular ebook system in mind.
+Bindery is designed to support those use cases, not just brand new books written with a particular toolchain in mind.
+If you want to publish in both electronic and paper formats, Bindery is probably not for you.
+Bindery is targeted at electronic books only.
 
 [adobe indesign]: http://www.adobe.com/products/indesign.html
 [asciidoc]: http://www.methods.co.nz/asciidoc/

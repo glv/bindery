@@ -5,9 +5,9 @@ Bindery.book do |b|
   b.format :epub
   
   b.title "A Trivial Bindery Example"
-  b.language 'en'
-  b.url 'http://glenn.mp/book/trivial_example'
   b.author 'Glenn Vanderburg'
+  b.url 'http://glenn.mp/book/trivial_example'
+  b.language 'en'
   
   b.chapter "Chapter 1", 'chapter_1.xhtml'
   b.chapter "Chapter 2", 'chapter_2.xhtml', :body_only => false
