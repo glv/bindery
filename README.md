@@ -36,17 +36,17 @@ Here is a quick example of a Bindery program.
       # process a collection of files called "chapter_1.md"
       Dir['*.md'].sort.each do |file_name|
         stem = file_name.sub(/\.md$/, '')
-        system %{markdown <#{file_name} >#{stem}.xhtml}
-        b.chapter stem.humanize, "#{stem}.xhtml"
+        system %{markdown <#{file_name} >#{stem}.xhtml.gen}
+        b.chapter stem.humanize, "#{stem}.xhtml.gen"
       end
       
       # an alternative way to process chapters, assuming the chapters use
       # Maruku's metadata support and contain the chapter title.  (Maruku
       # is a Ruby Markdown library that supports numerous common extensions
       # to the basic Markdown syntax.)
-      Dir['*.md'].sort.each do |file_name|
+      Dir['*.maruku'].sort.each do |file_name|
         b.chapter do
-          output_file_name = file_name.sub(/\.md$/, '.xhtml')
+          output_file_name = file_name.sub(/\.maruku$/, '.xhtml.gen')
           doc = Maruku.new(IO.read(file_name))
           open(output_file_name, "w") {|os| os.write(doc.to_html)}
           # return a hash with title and file info:
