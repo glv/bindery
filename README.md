@@ -2,8 +2,9 @@
 
 [Bindery][] is a [Ruby][] library for generating ebooks.
 
-Electronic book formats are rather simple (HTML, CSS, and some image files packed into a single bundle along with various bits of metadata).
-But there are a lot of tricky details, and a lot of redundancy in the metadata.
+Electronic book formats are typically rather simple.
+An EPUB book, for example, is just HTML, CSS, and some image files packed into a single zip file along with various bits of metadata.
+But there are numerous tricky details, and a lot of redundancy in the metadata.
 Bindery aims to simplify the process.
 
 To use Bindery, you write a simple Ruby program that describes the book's structure and important metadata.
