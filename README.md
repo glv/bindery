@@ -90,7 +90,7 @@ Imagine that, like [Joel Spolsky][], you want to publish an anthology of [your b
 Or, like [Steven Johnson][], you write carefully researched books that weave together threads from many fields and disciplines, so you make use of a sophisticated research management tool like [DEVONthink][] and do a lot of your own writing in that tool (Johnson has written [two][johnson dt1] [articles][johnson dt2] describing his research and writing methods).
 Or perhaps you simply want to read through the [SproutCore tutorial][], but your spare time is fragmented (and usually occurs when you're on an airplane) so you want to convert it to an ebook format so it's always available and your reader will keep track of how far you've read.
 
-In any of those cases, the writing will exist in a format that probably doesn't match what existing ebook generation systems expect, and in some cases it will already be in the HTML format that nearly all ebook formats are based on.
+In any of those cases, the writing will exist in a format that probably doesn't match what existing ebook generation systems expect, and in some cases it will already be in the HTML format that all popular ebook formats are based on.
 
 Bindery is designed to support those use cases, not just brand new books written with a particular ebook system in mind.
 
