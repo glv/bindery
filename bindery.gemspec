@@ -21,4 +21,16 @@ into a completed book suitable for installation on an ebook reader.}
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
+
+  add_runtime_dependency = if s.respond_to?(:specification_version) && Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
+                             :add_runtime_dependency
+                           else
+                             :add_dependency
+                           end
+  s.send(add_runtime_dependency, 'builder')
+  s.send(add_runtime_dependency, 'zip')
+  
+  s.add_development_dependency 'mocha'
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec', ['~> 2.0']
 end

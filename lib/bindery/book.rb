@@ -32,7 +32,7 @@ module Bindery
     end
     
     def generate
-      @formats.each do |format|
+      formats.each do |format|
         require "bindery/formats/#{format}"
         ::Bindery::Formats.const_get(format.to_s.capitalize).new(self).generate
       end
