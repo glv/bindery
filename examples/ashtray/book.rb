@@ -35,7 +35,7 @@ Bindery.book do |b|
     'http://opinionator.blogs.nytimes.com/2011/03/10/the-ashtray-this-contest-of-interpretation-part-5/'
   ].each_with_index do |url, i|
     b.chapter do
-      file_name = "chapter_#{i+1}.xhtml.gen"
+      file_name = "chapter_#{i+1}.xhtml_gen"
       doc = Nokogiri::HTML(open(url))
       title = doc.css('h1.entry-title').first.text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
       open(file_name, 'w') do |os|

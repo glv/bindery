@@ -1,0 +1,14 @@
+- Flesh out validation
+	Consider moving details to format modules.
+	Investigate Mobi validity constraints to see whether that makes sense.
+- Add more metadata support
+	- subtitle
+	- different kinds of authors
+- Title page
+- Title image
+- Image support
+- A basic CSS file
+- Support for alternative CSS files
+- Frontmatter
+- Nested chapter structures
+- Generate Mobi files

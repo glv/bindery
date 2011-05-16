@@ -32,9 +32,9 @@ module Bindery
         File.delete(book.epub_output_file) if File.exist?(book.epub_output_file)
         Zip::ZipFile.open(book.epub_output_file, Zip::ZipFile::CREATE) do |zipfile|
           # FIXME: The mimetype file is supposed to be the first one in the Zip directory, but that doesn't seem to be happening.
-          zipfile.write_file 'mimetype', mimetype
-          zipfile.mkdir 'META_INF'
-          zipfile.write_file 'META_INF/container.xml', container
+          zipfile.write_uncompressed_file 'mimetype', mimetype
+          zipfile.mkdir 'META-INF'
+          zipfile.write_file 'META-INF/container.xml', container
           zipfile.write_file 'book.opf', opf
           zipfile.write_file 'book.ncx', ncx
           
@@ -70,7 +70,7 @@ module Bindery
       def opf
         xm = Builder::XmlMarkup.new(:indent => 2)
         xm.instruct!
-        xm.package('version'=>'2.0', 'xmlns'=>'http://www.idpf.org/2007/opf', 'unique_identifier'=>'BookId') {
+        xm.package('version'=>'2.0', 'xmlns'=>'http://www.idpf.org/2007/opf', 'unique-identifier'=>'BookId') {
           
           xm.metadata('xmlns:dc'=>'http://purl.org/dc/elements/1.1/', 'xmlns:opf'=>'http://www.idpf.org/2007/opf') {
             # required elements
@@ -131,8 +131,8 @@ module Bindery
                 xm.navLabel {
                   xm.text chapter.title
                 }
+                xm.content 'src'=>chapter.epub_output_file
               }
-              xm.content 'src'=>chapter.epub_output_file
               play_order += 1
             end
           }
@@ -205,3 +205,7 @@ module Bindery
     end
   end
 end
+
+# Notes:
+# cover image file: in manifest, then in metadata as <meta name="cover" content="manifest-entry-id"/>
+# cover: xhtml file, in manifest, also in spine as <itemref idref="manifest-entry-id" linear="no"/>, also in guide as <reference type="cover" title="Cover" href="cover.xhtml"/> (why does that use a direct href instead of an id ref?)

@@ -2,7 +2,7 @@
 .bundle
 Gemfile.lock
 pkg/*
-*.gen
+*_gen
 *.epub
 rspec.txt
 coverage

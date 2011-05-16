@@ -15,7 +15,7 @@ Bindery.book do |b|
     # It's good practice to have a way to distinguish source files from
     # those generated as part of the build, so you can have a Rake task
     # or something to clean up the intermediate files.
-    File.open("chapter_3.xhtml.gen", "w") do |os|
+    File.open("chapter_3.xhtml_gen", "w") do |os|
       os.write %{
         <p>Let's just write this chapter in line, shall we?</p>
         <p>It seems easier that way, when the chapters are so short.</p>

@@ -9,7 +9,7 @@ Bindery aims to simplify the process.
 
 To use Bindery, you write a simple Ruby program that describes the book's structure and important metadata.
 This program is also responsible for identifying the HTML files that correspond to the book's chapters; those files might already exist, but the program can generate them on the fly as well.
-Then, you simply run a [Rake][] task to run that program and generate the book.
+Then, you simply run that program to generate the book.
 
 Initially, Bindery will support generating the [EPUB][] format.
 I'll work to add support for other formats when EPUB support is working well.
@@ -36,8 +36,9 @@ Here is a quick example of a Bindery program.
       # process a collection of files called "chapter_1.md"
       Dir['*.md'].sort.each do |file_name|
         stem = file_name.sub(/\.md$/, '')
-        system %{markdown <#{file_name} >#{stem}.xhtml.gen}
-        b.chapter stem.humanize, "#{stem}.xhtml.gen"
+        output_file_name = "#{stem}.xhtml_gen"
+        system %{markdown <#{file_name} >#{output_file_name}}
+        b.chapter stem.humanize, output_file_name
       end
       
       # an alternative way to process chapters, assuming the chapters use
@@ -46,7 +47,7 @@ Here is a quick example of a Bindery program.
       # to the basic Markdown syntax.)
       Dir['*.maruku'].sort.each do |file_name|
         b.chapter do
-          output_file_name = file_name.sub(/\.maruku$/, '.xhtml.gen')
+          output_file_name = file_name.sub(/\.maruku$/, '.xhtml_gen')
           doc = Maruku.new(IO.read(file_name))
           open(output_file_name, "w") {|os| os.write(doc.to_html)}
           # return a hash with title and file info:
