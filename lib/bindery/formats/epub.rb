@@ -74,7 +74,7 @@ module Bindery
           
           xm.metadata('xmlns:dc'=>'http://purl.org/dc/elements/1.1/', 'xmlns:opf'=>'http://www.idpf.org/2007/opf') {
             # required elements
-            xm.dc :title, book.title
+            xm.dc :title, book.full_title
             xm.dc :language, book.language
             xm.dc :identifier, book.url, ident_options('opf:scheme'=>'URL') if book.url
             xm.dc :identifier, book.isbn, ident_options('opf:scheme'=>'ISBN') if book.isbn            
@@ -115,7 +115,7 @@ module Bindery
           }
           
           xm.docTitle {
-            xm.text book.title
+            xm.text book.full_title
           }
           
           xm.docAuthor {
@@ -161,6 +161,50 @@ module Bindery
         else
           zipfile.add(chapter.epub_output_file, chapter.file)
         end
+      end
+      
+      def cover
+        xm = Builder::XmlMarkup.new(:indent => 2)
+        xm.instruct!
+        xm.declare!(:DOCTYPE, :html, :PUBLIC, '-//W3C//DTD XHTML 1.1//END', 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd')
+        xm.html('xmlns'=>'http://www.w3.org/1999/xhtml') { # ??? xml:lang attribute?
+          xm.head {
+            xm.title "#{book.title}: Cover"
+            xm.meta('http-equiv'=>'Content-Type', 'content'=>'application/xhtml+xml; charset=utf-8')
+          }
+          xm.body {
+            xm.div('style'=>'text-align: center; page-break-after: always;') {
+              if book.cover
+                xm.img('src'=>"images/#{book.cover}", 'alt'=>book.title, 'style'=>'height: 100%; max-width: 100%;')
+              else
+                xm.h1 book.title
+                xm.h2 book.subtitle if book.subtitle
+                xm.h3 "by #{book.author}" if book.author
+              end
+            }
+          }
+        }
+        %q{|<?xml version="1.0" encoding="UTF-8" ?>
+           |
+           |<!DOCTYPE html PUBLIC
+           |     "-//W3C//DTD XHTML 1.1//EN"
+           |     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+           |
+           |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+           |
+           |  <head>
+           |   <title>Cover</title>
+           |   <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
+           |  </head>
+           |
+           |  <body>
+           |    <div style="text-align: center; page-break-after: always;">
+           |       <img src="images/cover.png" alt="Cover" style="height: 100%; max-width: 100%;" />
+           |    </div>
+           |  </body>
+           |
+           |</html>
+           |}.stripmargin
       end
       
       def image

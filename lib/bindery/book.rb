@@ -1,6 +1,6 @@
 module Bindery
   class Book
-    attr_accessor :output, :url, :isbn, :title, :language, :author
+    attr_accessor :output, :url, :isbn, :title, :language, :author, :subtitle
     
     def formats
       @formats ||= []
@@ -8,6 +8,10 @@ module Bindery
     
     def chapters
       @chapters ||= []
+    end
+    
+    def full_title
+      title + (subtitle ? ": #{subtitle}" : '')
     end
     
     def valid?

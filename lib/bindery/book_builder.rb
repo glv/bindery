@@ -29,6 +29,10 @@ module Bindery
       book.title = title
     end
     
+    def subtitle(subtitle)
+      book.subtitle = subtitle
+    end
+    
     def language(language)
       book.language = language
     end

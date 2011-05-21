@@ -80,7 +80,7 @@ Planned features include:
 There are other systems for generating ebooks; [git-scribe][] is one of the best.
 However most ebook generation systems prescribe a particular authoring format or tool.
 For example, git-scribe assumes you will be using [AsciiDoc][] and [Git][], and is additionally optimized for use on [GitHub][].
-Other tools are designed to work with proprietary tools such as [Microsoft Word][] or [Adobe InDesign][].
+Other systems are designed to work with proprietary tools such as [Microsoft Word][] or [Adobe InDesign][].
 Each such format or tool has strengths and weaknesses.
 For example, while AsciiDoc is an excellent tool for writing technical books, it's less well suited for novels, memoirs, or poetry.
 For such tasks (and depending on your personal preferences) it may be better to write in [Markdown][] or [Textile][].

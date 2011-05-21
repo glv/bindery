@@ -18,6 +18,28 @@ require 'nokogiri'
 # using a service like Instapaper.  However, it would definitely be a
 # violation of Morris' and the New York Times' copyrights to distribute
 # the resulting ebook to others.  Don't do that!
+
+PARTS = [
+  'http://opinionator.blogs.nytimes.com/2011/03/06/the-ashtray-the-ultimatum-part-1/',
+  'http://opinionator.blogs.nytimes.com/2011/03/07/the-ashtray-shifting-paradigms-part-2/',
+  'http://opinionator.blogs.nytimes.com/2011/03/08/the-ashtray-hippasus-of-metapontum-part-3/',
+  'http://opinionator.blogs.nytimes.com/2011/03/09/the-ashtray-the-author-of-the-quixote-part-4/',
+  'http://opinionator.blogs.nytimes.com/2011/03/10/the-ashtray-this-contest-of-interpretation-part-5/'
+]
+
+def process_part(url, i)
+  file_name = "chapter_#{i+1}.xhtml_gen"
+  doc = Nokogiri::HTML(open(url))
+  title = doc.css('h1.entry-title').first.text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
+  open(file_name, 'w') do |os|
+    content = doc.css('div.entry-content').first
+    
+    # This should deal with image links properly, and it doesn't yet.
+    os.write content.children - content.children[0..1]
+  end
+  { :title => title, :file => file_name }
+end
+
 Bindery.book do |b|
   b.output 'the_ashtray'
   b.format :epub
@@ -27,24 +49,7 @@ Bindery.book do |b|
   b.url 'http://glenn.mp/book/the_ashtray'
   b.language 'en'
   
-  [
-    'http://opinionator.blogs.nytimes.com/2011/03/06/the-ashtray-the-ultimatum-part-1/',
-    'http://opinionator.blogs.nytimes.com/2011/03/07/the-ashtray-shifting-paradigms-part-2/',
-    'http://opinionator.blogs.nytimes.com/2011/03/08/the-ashtray-hippasus-of-metapontum-part-3/',
-    'http://opinionator.blogs.nytimes.com/2011/03/09/the-ashtray-the-author-of-the-quixote-part-4/',
-    'http://opinionator.blogs.nytimes.com/2011/03/10/the-ashtray-this-contest-of-interpretation-part-5/'
-  ].each_with_index do |url, i|
-    b.chapter do
-      file_name = "chapter_#{i+1}.xhtml_gen"
-      doc = Nokogiri::HTML(open(url))
-      title = doc.css('h1.entry-title').first.text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
-      open(file_name, 'w') do |os|
-        content = doc.css('div.entry-content').first
-        
-        # This should deal with image links properly, and it doesn't yet.
-        os.write content.children - content.children[0..1]
-      end
-      { :title => title, :file => file_name }
-    end
+  PARTS.each_with_index do |url, i|
+    b.chapter { process_part(url, i) }
   end
 end

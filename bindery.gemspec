@@ -9,8 +9,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Glenn Vanderburg"]
   s.email       = ["glv@vanderburg.org"]
   s.homepage    = "http://github.com/glv/bindery"
-  s.summary     = %q{Easy ebook generation with Ruby}
-  s.description = %q{Bindery is a Ruby library for easy generation of ebooks.
+  s.summary     = %q{Easy ebook packaging with Ruby}
+  s.description = %q{Bindery is a Ruby library for easy packaging of ebooks.
 You supply the chapter content (in HTML format) and explain the book's structure to bindery,
 and bindery generates the various other files required by ebook formats and assembles them
 into a completed book suitable for installation on an ebook reader.}
