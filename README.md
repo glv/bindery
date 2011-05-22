@@ -18,45 +18,47 @@ I'll work to add support for other formats when EPUB support is working well.
 
 Here is a quick example of a Bindery program.
 
-    require 'bindery'
-    require 'active_support'
-    require 'maruku'
-    
-    Bindery.book do |b|
-      b.output 'anthology'
-      b.format :epub
-      
-      b.title "The Great Elbonian Novel"
-      b.language 'en'
-      b.url 'http://glv.github.com/bindery/books/example'
-      b.author 'Glenn Vanderburg'
-      
-      b.frontmatter 'Preface', :file => 'pref.xhtml'
-      
-      # process a collection of files called "chapter_1.md"
-      Dir['*.md'].sort.each do |file_name|
-        stem = file_name.sub(/\.md$/, '')
-        output_file_name = "#{stem}.xhtml_gen"
-        system %{markdown <#{file_name} >#{output_file_name}}
-        b.chapter stem.humanize, output_file_name
-      end
-      
-      # an alternative way to process chapters, assuming the chapters use
-      # Maruku's metadata support and contain the chapter title.  (Maruku
-      # is a Ruby Markdown library that supports numerous common extensions
-      # to the basic Markdown syntax.)
-      Dir['*.maruku'].sort.each do |file_name|
-        b.chapter do
-          output_file_name = file_name.sub(/\.maruku$/, '.xhtml_gen')
-          doc = Maruku.new(IO.read(file_name))
-          open(output_file_name, "w") {|os| os.write(doc.to_html)}
-          # return a hash with title and file info:
-          { :title => doc.attributes[:title], :file => output_file_name }
-        end
-      end
-      
-      b.backmatter 'Colophon' # filename assumed to be colophon.xhtml
+```ruby
+require 'bindery'
+require 'active_support'
+require 'maruku'
+
+Bindery.book do |b|
+  b.output 'anthology'
+  b.format :epub
+  
+  b.title "The Great Elbonian Novel"
+  b.language 'en'
+  b.url 'http://glv.github.com/bindery/books/example'
+  b.author 'Glenn Vanderburg'
+  
+  b.frontmatter 'Preface', :file => 'pref.xhtml'
+  
+  # process a collection of files called "chapter_1.md"
+  Dir['*.md'].sort.each do |file_name|
+    stem = file_name.sub(/\.md$/, '')
+    output_file_name = "#{stem}.xhtml_gen"
+    system %{markdown <#{file_name} >#{output_file_name}}
+    b.chapter stem.humanize, output_file_name
+  end
+  
+  # an alternative way to process chapters, assuming the chapters use
+  # Maruku's metadata support and contain the chapter title.  (Maruku
+  # is a Ruby Markdown library that supports numerous common extensions
+  # to the basic Markdown syntax.)
+  Dir['*.maruku'].sort.each do |file_name|
+    b.chapter do
+      output_file_name = file_name.sub(/\.maruku$/, '.xhtml_gen')
+      doc = Maruku.new(IO.read(file_name))
+      open(output_file_name, "w") {|os| os.write(doc.to_html)}
+      # return a hash with title and file info:
+      { :title => doc.attributes[:title], :file => output_file_name }
     end
+  end
+  
+  b.backmatter 'Colophon' # filename assumed to be colophon.xhtml
+end
+```
     
 ## Status
 
