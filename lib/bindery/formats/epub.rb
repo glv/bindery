@@ -204,14 +204,41 @@ module Bindery
            |  </body>
            |
            |</html>
-           |}.stripmargin
-      end
-      
-      def image
+           |}.strip_margin
       end
       
       def stylesheet
-        %{}
+        # This is a start, but needs work.
+        %q{|@page {
+           |  margin-top: 0.8em;
+           |  margin-bottom: 0.8em;}
+           |
+           |body {
+           |  margin-left: 1em;
+           |  margin-right: 1em;
+           |  padding: 0;}
+           |
+           |h2 {
+           |  padding-top:0;
+           |  display:block;}
+           |
+           |p {
+           |  margin-top: 0.3em;
+           |  margin-bottom: 0.3em;
+           |  text-indent: 1.0em;
+           |  text-align: justify;}
+           |
+           |body > p:first-child {text-indent: 0}
+           |div.text p:first-child {text-indent: 0}
+           |
+           |blockquote p, li p {
+           |  text-indent: 0.0em;
+           |  text-align: left;}
+           |
+           |div.chapter {padding-top: 3.0em;}
+           |div.part {padding-top: 3.0em;}
+           |h3.section_title {text-align: center;}
+           |}.strip_margin
       end
       
       def ident_options(opts)
