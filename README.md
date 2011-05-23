@@ -1,6 +1,6 @@
 # Bindery
 
-[Bindery][] is a [Ruby][] library for generating ebooks.
+[Bindery][] is a [Ruby][] library for packaging ebooks.
 
 Electronic book formats are typically rather simple.
 An EPUB book, for example, is just HTML, CSS, and some image files packed into a single zip file along with various bits of metadata.
@@ -32,7 +32,9 @@ Bindery.book do |b|
   b.url 'http://glv.github.com/bindery/books/example'
   b.author 'Glenn Vanderburg'
   
-  b.frontmatter 'Preface', :file => 'pref.xhtml'
+  b.frontmatter 'Preface', 'pref.xhtml'
+  
+  b.chapter 'Introduction', 'intro.xhtml' 
   
   # process a collection of files called "chapter_1.md"
   Dir['*.md'].sort.each do |file_name|
@@ -90,8 +92,9 @@ For such tasks (and depending on your personal preferences) it may be better to 
 More importantly, requiring a specific format makes an ebook system difficult to use for a book that includes existing material being republished or repurposed.
 
 Imagine that, like [Joel Spolsky][], you want to publish an anthology of [your best blog posts][joel on software], or a collection of the [best software writing from around the web][best software writing].
-Or, like [Steven Johnson][], you write carefully researched books that weave together threads from many fields and disciplines, so you make use of a sophisticated research management tool like [DEVONthink][] and do a lot of your own writing in that tool (Johnson has written [two][johnson dt1] [articles][johnson dt2] describing his research and writing methods).
-Or perhaps you simply want to read through the [SproutCore tutorial][], but your spare time is fragmented (and usually occurs when you're on an airplane) so you want to convert it to an ebook format so it's always available and your reader will keep track of how far you've read.
+Or, like [Steven Johnson][], you write carefully researched books that weave together threads from many fields and disciplines, so you write and collect research in a sophisticated research management tool like [DEVONthink][] (Johnson has written [two][johnson dt1] [articles][johnson dt2] describing his research and writing methods).
+Or perhaps you simply want to read through the [SproutCore Guides][], but your spare time is fragmented (and usually occurs when you're on an airplane) so you want to convert them to an ebook format so they're always available and your ebook reader will keep track of how far you've read.
+(For that matter, if you're part of an effort like [SproutCore][] and have great online material like that, Bindery might be the easiest way to package it up into a handy offline format.)
 
 In any of those cases, the writing will exist in a format that probably doesn't match what existing ebook generation systems expect, and in some cases it will already be in the HTML format that all popular ebook formats are based on.
 
@@ -117,6 +120,7 @@ Bindery is targeted at electronic books only.
 [microsoft word]: http://office.microsoft.com/word/
 [rake]: http://rake.rubyforge.org/
 [ruby]: http://ruby-lang.org/
-[sproutcore tutorial]: http://wiki.sproutcore.com/w/page/12413071/Todos%C2%A0Intro
+[sproutcore]: http://www.sproutcore.com/
+[sproutcore guides]: http://guides.sproutcore.com/
 [steven johnson]: http://www.stevenberlinjohnson.com/
 [textile]: http://www.textism.com/tools/textile/
