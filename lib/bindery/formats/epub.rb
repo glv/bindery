@@ -153,7 +153,7 @@ module Bindery
                        |</head>
                        |<body>
                        |}.strip_margin
-            os.write IO.read(chapter.file)
+            os.write File.open(chapter.file, 'r:UTF-8'){|f| f.read}
             os.write %{|</body>
                        |</html>
                        |}.strip_margin
