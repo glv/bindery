@@ -30,9 +30,9 @@ PARTS = [
 def process_part(url, i)
   file_name = "chapter_#{i+1}.xhtml_gen"
   doc = Nokogiri::HTML(open(url))
-  title = doc.css('h1.entry-title').first.text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
+  title = doc.at_css('h1.entry-title').text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
   open(file_name, 'w') do |os|
-    content = doc.css('div.entry-content').first
+    content = doc.at_css('div.entry-content')
     
     # This should deal with image links properly, and it doesn't yet.
     os.write content.children - content.children[0..1]
