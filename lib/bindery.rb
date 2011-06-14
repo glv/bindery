@@ -1,4 +1,5 @@
 require 'bindery/extensions/string'
+require 'bindery/extensions/file'
 
 require 'bindery/version'
 require 'bindery/bindery'

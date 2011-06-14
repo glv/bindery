@@ -20,5 +20,9 @@ module Bindery
     def body_only?
       options.fetch(:body_only, true)
     end
+    
+    def include_images?
+      options.fetch(:include_images, true)
+    end
   end
 end

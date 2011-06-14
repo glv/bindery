@@ -35,19 +35,17 @@ module Bindery
           zipfile.write_uncompressed_file 'mimetype', mimetype
           zipfile.mkdir 'META-INF'
           zipfile.write_file 'META-INF/container.xml', container
-          zipfile.write_file 'book.opf', opf
-          zipfile.write_file 'book.ncx', ncx
           
           # also frontmatter, backmatter
           book.chapters.each do |chapter|
             write_chapter(chapter, zipfile)
           end
           
-          # zipfile.mkdir 'images'
-          # add image files in images directory
-          
           zipfile.mkdir 'css'
           zipfile.write_file 'css/book.css', stylesheet
+
+          zipfile.write_file 'book.opf', opf
+          zipfile.write_file 'book.ncx', ncx
         end
       end
             
@@ -140,8 +138,10 @@ module Bindery
       end
       
       def write_chapter(chapter, zipfile)
-        if chapter.body_only?
-          zipfile.get_output_stream(chapter.epub_output_file) do |os|
+        File.open(chapter.file, 'r:UTF-8') do |ch_in|
+          doc = Nokogiri.HTML(ch_in.read)
+          include_images(doc, zipfile) if chapter.include_images?
+          zipfile.get_output_stream(chapter.epub_output_file) do |ch_out|
             # FIXME: must HTML-escape the chapter title
             os.write %{|<?xml version="1.0" encoding="UTF-8" ?>
                        |<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -152,14 +152,29 @@ module Bindery
                        |  <link rel="stylesheet" href="css/book.css" type="text/css" />
                        |</head>
                        |<body>
-                       |}.strip_margin
-            os.write File.open(chapter.file, 'r:UTF-8'){|f| f.read}
+                       |}.strip_margin if chapter.body_only?
+            os.write doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML)
             os.write %{|</body>
                        |</html>
-                       |}.strip_margin
+                       |}.strip_margin if chapter.body_only?
           end
-        else
-          zipfile.add(chapter.epub_output_file, chapter.file)
+        end
+      end
+      
+      def include_images(doc, zipfile)
+        # TODO
+        # ??? where else can images appear? Style sheets?
+        zipfile.mkdir('images') unless zip_dir_exists?(zipfile, 'images')
+        doc.css('img').each do |img|
+          url = img.attr('src').text
+          img_fn = make_image_file_name(zipfile, url)
+          open(url, 'r') do |is|
+            zipfile.get_output_stream(img_fn) do |os|
+              os.write is.read
+            end
+          end          
+          #   add manifest entry
+          #   rewrite image tag
         end
       end
       
@@ -250,6 +265,26 @@ module Bindery
         opts
       end
       
+      def zip_dir_exists?(zipfile, dirname)
+        dirname = "#{dirname}/" unless dirname =~ %r{/$}
+        zipfile.entries.any?{|e| e.directory? && e.name == dirname}
+      end
+            
+      def zip_file_exists?(zipfile, filename)
+        zipfile.entries.any?{|e| e.name == filename}
+      end
+            
+      def make_image_file_name(zipfile, url)
+        stem, ext = File.base_parts(url)
+        filename = "images/#{stem}#{ext}"
+        n = 0
+        while zip_file_exists(zipfile, filename)
+          n += 1
+          filename = "#{stem}_#{n}#{ext}"
+        end
+        filename
+      end
+      
       module BookMethods
         def epub_output_file
           @epub_output_file ||= "#{output}.epub"
@@ -266,7 +301,7 @@ module Bindery
       
       module ChapterMethods
         def epub_id
-          @epub_id ||= File.basename(file, File.extname(file))
+          @epub_id ||= File.stemname(file)
         end
         
         def epub_output_file

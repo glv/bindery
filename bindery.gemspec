@@ -28,6 +28,7 @@ into a completed book suitable for installation on an ebook reader.}
                              :add_dependency
                            end
   s.send(add_runtime_dependency, 'builder')
+  s.send(add_runtime_dependency, 'nokogiri')
   s.send(add_runtime_dependency, 'zip')
   
   s.add_development_dependency 'mocha'

@@ -1,6 +1,7 @@
 require 'bindery'
 require 'open-uri'
 require 'nokogiri'
+require 'tidy_ffi'
 
 # In March, 2011, Errol Morris published on the New York Times website
 # a five-part reminiscence of a long-ago encounter with famed philosopher
@@ -10,7 +11,9 @@ require 'nokogiri'
 # appear as a single piece of writing in the Instapaper apps; additionally,
 # it's long enough that you might well have to stop reading in the middle
 # of one of the articles, and Instapaper doesn't remember your stopping 
-# point or synch it between devices.
+# point or synch it between devices. (Not to mention that it doesn't let
+# you highlight or make notes.) An ebook is simply a better format for some
+# kinds of writing.
 #
 # Note: I occasionally write Bindery scripts like this to bundle writing
 # from the web into a more convenient form for my own personal use.  In
@@ -30,12 +33,13 @@ PARTS = [
 def process_part(url, i)
   file_name = "chapter_#{i+1}.xhtml_gen"
   doc = Nokogiri::HTML(open(url))
+  #puts doc
   title = doc.at_css('h1.entry-title').text.sub(/^.*?: (.*) \(Part \d\)\s*$/, '\\1')
   open(file_name, 'w') do |os|
     content = doc.at_css('div.entry-content')
-    
+    content.children[0..1].each{|c| c.remove}
     # This should deal with image links properly, and it doesn't yet.
-    os.write content.children - content.children[0..1]
+    os.write TidyFFI::Tidy.clean(content.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML), :force_output => true, :show_body_only => true)
   end
   { :title => title, :file => file_name }
 end
