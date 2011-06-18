@@ -64,11 +64,10 @@ end
     
 ## Status
 
-Bindery is currently limited to generating EPUB books that do not contain images or other non-textual content.
+Bindery is currently limited to generating EPUB books.
 
 It is also in a very early stage.
 It's capable of generating very simple books, but many features (including the frontmatter and backmatter methods in the example above) do not work yet.
-Additionally, validation is sketchy, so it's quite likely that the books you build using Bindery will not be valid EPUB files.
 But the basics are there, and contributions are welcome.
 
 Generated EPUB books will pass [epubcheck][] *except* for chapter content.
