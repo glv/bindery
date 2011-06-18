@@ -1,13 +1,14 @@
 - Flesh out validation
 	Consider moving details to format modules.
 	Investigate Mobi validity constraints to see whether that makes sense.
+- Cache fetched image (and other) files so we don't have to fetch them twice while building multiple formats.
 - Add more metadata support
 	- subtitle
 	- different kinds of authors
 - Title page
 - Title image
-- Image support
-- A basic CSS file
+- Image support @done
+- A basic CSS file @done
 - Support for alternative CSS files
 - Frontmatter
 - Nested chapter structures

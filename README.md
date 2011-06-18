@@ -5,7 +5,7 @@
 Electronic book formats are typically rather simple.
 An EPUB book, for example, is just HTML, CSS, and some image files packed into a single zip file along with various bits of metadata.
 But there are numerous tricky details, and a lot of redundancy in the metadata.
-Bindery aims to simplify the process.
+Bindery aims to simplify the process, while stopping short of being a full ebook authoring system.
 
 To use Bindery, you write a simple Ruby program that describes the book's structure and important metadata.
 This program is also responsible for identifying the HTML files that correspond to the book's chapters; those files might already exist, but the program can generate them on the fly as well.
@@ -71,11 +71,16 @@ It's capable of generating very simple books, but many features (including the f
 Additionally, validation is sketchy, so it's quite likely that the books you build using Bindery will not be valid EPUB files.
 But the basics are there, and contributions are welcome.
 
+Generated EPUB books will pass [epubcheck][] *except* for chapter content.
+EPUB places some additional restrictions on XHTML and CSS, and if the supplied chapter content violates those restrictions then the EPUB file will be invalid.
+Most EPUB readers are fairly permissive about such things, but some are more particular.
+I plan to build support for tidying up the XHTML and CSS and eliminating invalid constructs, but at the moment that's a low priority.
+
 Planned features include:
 
 * options for sections (with and without section title pages) rather than just a flat chapter structure.
 * additional metadata including all of [Dublin Core][].
-* support for images
+* title and cover pages
 * support for multiple stylesheets
 * support for generating Mobipocket books
 
@@ -109,6 +114,7 @@ Bindery is targeted at electronic books only.
 [devonthink]: http://www.devon-technologies.com/products/devonthink/index.html
 [dublin core]: http://dublincore.org/sm
 [epub]: http://idpf.org/epub
+[epubcheck]: http://code.google.com/p/epubcheck/
 [git]: http://git-scm.com/
 [github]: http://github.com/
 [git-scribe]: http://github.com/schacon/git-scribe
