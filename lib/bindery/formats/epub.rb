@@ -1,6 +1,7 @@
 require 'builder'
 require 'zip'
 require 'bindery/extensions/zip_file'
+require 'nokogiri'
 
 module Bindery
   module Formats
@@ -20,12 +21,22 @@ module Bindery
     #   {Open Publication Structure (OPS) 2.0.1 - Recommended Specification}[http://idpf.org/epub/20/spec/OPS_2.0.1_draft.htm].
     class Epub
       
-      attr_accessor :book
+      MimeTypes = {
+        '.jpg' => 'image/jpeg',
+        '.png' => 'image/png',
+        '.gif' => 'image/gif',
+      }
+      
+      class ManifestEntry < Struct.new(:file_name, :xml_id, :mime_type)
+      end
+      
+      attr_accessor :book, :manifest_entries
       
       def initialize(book)
         self.book = book
         book.extend BookMethods
         book.chapters.each{|chapter| chapter.extend ChapterMethods}
+        self.manifest_entries = []
       end
       
       def generate
@@ -85,7 +96,9 @@ module Bindery
             book.chapters.each{|chapter| xm.item 'id'=>chapter.epub_id, 'href'=>chapter.epub_output_file, 'media-type'=>'application/xhtml+xml'}
             # also frontmatter, backmatter
             xm.item 'id'=>'stylesheet', 'href'=>'css/book.css', 'media-type'=>'text/css'
-            # xm.item 'id'=>'ch1-pic', 'href'=>'images/ch1-pic.png', 'media-type'=>'image/png'
+            manifest_entries.each do |entry|
+              xm.item 'id'=>entry.xml_id, 'href'=>entry.file_name, 'media-type'=>entry.mime_type
+            end
             # xm.item 'id'=>'myfont', 'href'=>'css/myfont.otf', 'media-type'=>'application/x-font-opentype'
             xm.item 'id'=>'ncx', 'href'=>'book.ncx', 'media-type'=>'application/x-dtbncx+xml'
           }
@@ -138,44 +151,52 @@ module Bindery
       end
       
       def write_chapter(chapter, zipfile)
+        save_options = Nokogiri::XML::Node::SaveOptions
         File.open(chapter.file, 'r:UTF-8') do |ch_in|
           doc = Nokogiri.HTML(ch_in.read)
           include_images(doc, zipfile) if chapter.include_images?
           zipfile.get_output_stream(chapter.epub_output_file) do |ch_out|
-            # FIXME: must HTML-escape the chapter title
-            os.write %{|<?xml version="1.0" encoding="UTF-8" ?>
-                       |<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-                       |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-                       |<head>
-                       |  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-                       |  <title>#{chapter.title}</title>
-                       |  <link rel="stylesheet" href="css/book.css" type="text/css" />
-                       |</head>
-                       |<body>
-                       |}.strip_margin if chapter.body_only?
-            os.write doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML)
-            os.write %{|</body>
-                       |</html>
-                       |}.strip_margin if chapter.body_only?
+            if chapter.body_only?
+              # FIXME: must HTML-escape the chapter title
+              ch_out.write %{|<?xml version="1.0" encoding="UTF-8" ?>
+                             |<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+                             |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+                             |<head>
+                             |  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+                             |  <title>#{chapter.title}</title>
+                             |  <link rel="stylesheet" href="css/book.css" type="text/css" />
+                             |</head>
+                             |}.strip_margin
+              ch_out.write doc.at('body').serialize(:save_with => (save_options::AS_XHTML | save_options::NO_DECLARATION))
+              ch_out.write %{|</html>
+                             |}.strip_margin
+            else
+              ch_out.write doc.serialize(:save_with => save_options::AS_XHTML)
+            end
           end
         end
       end
       
       def include_images(doc, zipfile)
-        # TODO
-        # ??? where else can images appear? Style sheets?
+        # TODO: where else can images appear? Style sheets?
         zipfile.mkdir('images') unless zip_dir_exists?(zipfile, 'images')
         doc.css('img').each do |img|
-          url = img.attr('src').text
+          url = img['src']
           img_fn = make_image_file_name(zipfile, url)
+          # TODO: These images should be cached somewhere for multi-format runs
           open(url, 'r') do |is|
             zipfile.get_output_stream(img_fn) do |os|
               os.write is.read
             end
-          end          
-          #   add manifest entry
-          #   rewrite image tag
+          end
+          add_manifest_entry(img_fn)
+          img['src'] = img_fn
         end
+      end
+      
+      def add_manifest_entry(file_name)
+        xml_id, ext = File.base_parts(file_name.gsub('/', '-'))
+        manifest_entries << ManifestEntry.new(file_name, xml_id, MimeTypes[ext])
       end
       
       def cover
@@ -199,27 +220,6 @@ module Bindery
             }
           }
         }
-        %q{|<?xml version="1.0" encoding="UTF-8" ?>
-           |
-           |<!DOCTYPE html PUBLIC
-           |     "-//W3C//DTD XHTML 1.1//EN"
-           |     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-           |
-           |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-           |
-           |  <head>
-           |   <title>Cover</title>
-           |   <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
-           |  </head>
-           |
-           |  <body>
-           |    <div style="text-align: center; page-break-after: always;">
-           |       <img src="images/cover.png" alt="Cover" style="height: 100%; max-width: 100%;" />
-           |    </div>
-           |  </body>
-           |
-           |</html>
-           |}.strip_margin
       end
       
       def stylesheet
@@ -278,7 +278,7 @@ module Bindery
         stem, ext = File.base_parts(url)
         filename = "images/#{stem}#{ext}"
         n = 0
-        while zip_file_exists(zipfile, filename)
+        while zip_file_exists?(zipfile, filename)
           n += 1
           filename = "#{stem}_#{n}#{ext}"
         end

@@ -7,7 +7,7 @@ module Bindery
       end
       
       def stemname(fn)
-        base_parts[0]
+        base_parts(fn)[0]
       end
     end
   end

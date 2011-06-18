@@ -38,8 +38,7 @@ def process_part(url, i)
   open(file_name, 'w') do |os|
     content = doc.at_css('div.entry-content')
     content.children[0..1].each{|c| c.remove}
-    # This should deal with image links properly, and it doesn't yet.
-    os.write TidyFFI::Tidy.clean(content.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML), :force_output => true, :show_body_only => true)
+    os.write content.serialize
   end
   { :title => title, :file => file_name }
 end
