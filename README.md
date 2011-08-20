@@ -1,4 +1,4 @@
-# Bindery
+# Bindery [![Build Status](https://secure.travis-ci.org/glv/bindery.png)](http://travis-ci.org/glv/bindery)
 
 [Bindery][] is a [Ruby][] library for packaging ebooks.
 
@@ -70,7 +70,7 @@ It is also in a very early stage.
 It's capable of generating very simple books, but many features (including the frontmatter and backmatter methods in the example above) do not work yet.
 But the basics are there, and contributions are welcome.
 
-Generated EPUB books will pass [epubcheck][] *except* for chapter content.
+Generated EPUB books will be valid according to [epubcheck][] *except* perhaps for chapter content.
 EPUB places some additional restrictions on XHTML and CSS, and if the supplied chapter content violates those restrictions then the EPUB file will be invalid.
 Most EPUB readers are fairly permissive about such things, but some are more particular.
 I plan to build support for tidying up the XHTML and CSS and eliminating invalid constructs, but at the moment that's a low priority.
