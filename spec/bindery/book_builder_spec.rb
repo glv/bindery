@@ -38,53 +38,32 @@ describe Bindery::BookBuilder do
     end
   end
   
-  describe "#chapter" do
+  describe "#div" do
     
-    context "when called without a block" do
-      it "raises an exception if title or filename are not supplied" do
-        expect { subject.chapter }.to raise_error(ArgumentError, "title not specified")
-        expect { subject.chapter "A" }.to raise_error(ArgumentError, "file not specified")
-      end
-      
-      it "stores a new chapter with the supplied options" do
-        subject.chapter "Foo", "bar.xhtml"
-        book.chapters.should have(1).elements
-        book.chapters.first.title.should == "Foo"
-        book.chapters.first.file.should == "bar.xhtml"
-      end
+    it "raises an exception if title or filename are not supplied" do
+      expect { subject.div("chapter", nil, "fn") }.to raise_error(ArgumentError, "title not specified")
+      expect { subject.div("chapter", "A", nil) }.to raise_error(ArgumentError, "file not specified")
     end
-    
-    context "when called with a block" do
-      
-      context "and title is supplied as an argument" do
-        it "expects the block to result in a filename string" do
-          expect { subject.chapter("Foo"){ 3 } }.to raise_error
-        end
-        
-        it "stores the title and the filename as a new chapter" do
-          subject.chapter("Foo"){ 'bar.xhtml' }
-          book.chapters.should have(1).elements
-          book.chapters.first.title.should == "Foo"
-          book.chapters.first.file.should == "bar.xhtml"
-        end
-      end
-      
-      context "and title is not supplied as an argument" do
-        it "expects the block to result in a hash with :title and :file options" do
-          expect { subject.chapter{ "Invalid" } }.to raise_error
-          expect { subject.chapter{ {:title => 'Foo'} } }.to raise_error
-          expect { subject.chapter{ {:file => 'bar.xhtml'} } }.to raise_error
-        end
-        
-        it "stores the title and the filename as a new chapter" do
-          subject.chapter { {:title => 'Foo', :file => 'bar.xhtml'} }
-          book.chapters.should have(1).elements
-          book.chapters.first.title.should == "Foo"
-          book.chapters.first.file.should == "bar.xhtml"
-        end
-      end
-      
+
+    it "stores a new division with the supplied options" do
+      subject.div 'excerpt', "Foo", "bar.xhtml", :a => :b
+      book.divisions.should have(1).elements
+      div = book.divisions.first
+      div.div_type.should == 'excerpt'
+      div.title.should == "Foo"
+      div.file.should == "bar.xhtml"
+      div.options.should include(:a => :b)
     end
     
   end
+
+  %w[chapter section part appendix].each do |div_type|
+    describe "##{div_type}" do
+      it "calls #div with the appropriate type" do
+        subject.expects(div_type.to_sym).once
+        subject.send(div_type, :title, :filename, {:a => :b})
+      end
+    end
+  end
+
 end

@@ -40,7 +40,7 @@ def process_part(url, i)
     content.children[0..1].each{|c| c.remove}
     os.write content.serialize
   end
-  { :title => title, :file => file_name }
+  [title, file_name]
 end
 
 Bindery.book do |b|
@@ -53,6 +53,6 @@ Bindery.book do |b|
   b.language 'en'
   
   PARTS.each_with_index do |url, i|
-    b.chapter { process_part(url, i) }
+    b.chapter *process_part(url, i)
   end
 end

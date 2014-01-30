@@ -1,0 +1,18 @@
+2013-08-10  Glenn Vanderburg
+
+	* content_methods.rb: Completely changed the behavior of the
+	chapter method when a block is passed.  The previous design was
+	embarrassingly bad.  There was no need to use the passed block
+	to dynamically calculate the parameters that could be passed
+	directly to the method; Ruby has other ways of doing that.  Now,
+	the block is used to define hierarchical book structure: nested
+	chapters, parts, sections, etc.
+
+	If you were using the block to dynamically build content and
+	return the chapter title and file name, simply move the content of
+	the block to a method, and then you can splice the returned title
+	and filename into the arguments of chapter using the splat
+	operator (*) or (if the block used the strategy of returning a
+	hash) include the activesupport gem, require
+	'active_support/core_ext/hash/slice', and use Hash#slice(:title,
+	:filename).

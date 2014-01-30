@@ -1,13 +1,23 @@
 module Bindery
   class Book
+    class Metadata < Struct.new(:name, :value, :options)
+    end
+    
+    class DublinMetadata < Metadata
+    end
+    
     attr_accessor :output, :url, :isbn, :title, :language, :author, :subtitle
+    
+    def metadata
+      @metadata ||= []
+    end
     
     def formats
       @formats ||= []
     end
     
-    def chapters
-      @chapters ||= []
+    def divisions
+      @divisions ||= []
     end
     
     def full_title
@@ -15,14 +25,14 @@ module Bindery
     end
     
     def valid?
-      configuration_valid? && metadata_valid? && chapters_valid?
+      configuration_valid? && metadata_valid? && divisions_valid?
     end
     
     def configuration_valid?
       true
       # formats specified or correctly defaulted
       # ouput specified
-      # at least one chapter
+      # at least one division
     end
     
     def metadata_valid?
@@ -31,8 +41,8 @@ module Bindery
       # what is there is correct
     end
     
-    def chapters_valid?
-      chapters.all?{|chapter| chapter.valid?} # && chapter file names are unique
+    def divisions_valid?
+      divisions.all?{|div| div.valid?} # && division file names are unique
     end
     
     def generate

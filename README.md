@@ -49,13 +49,11 @@ Bindery.book do |b|
   # is a Ruby Markdown library that supports numerous common extensions
   # to the basic Markdown syntax.)
   Dir['*.maruku'].sort.each do |file_name|
-    b.chapter do
-      output_file_name = file_name.sub(/\.maruku$/, '.xhtml_gen')
-      doc = Maruku.new(IO.read(file_name))
-      open(output_file_name, "w") {|os| os.write(doc.to_html)}
-      # return a hash with title and file info:
-      { :title => doc.attributes[:title], :file => output_file_name }
-    end
+    output_file_name = file_name.sub(/\.maruku$/, '.xhtml_gen')
+    doc = Maruku.new(IO.read(file_name))
+    open(output_file_name, "w") {|os| os.write(doc.to_html)}
+   
+    b.chapter doc.attributes[:title], output_file_name
   end
   
   b.backmatter 'Colophon' # filename assumed to be colophon.xhtml
@@ -106,6 +104,13 @@ Bindery is designed to support those use cases, not just brand new books written
 If you want to publish in both electronic and paper formats, Bindery is probably not for you.
 Bindery is targeted at electronic books only.
 
+## Acknowledgments
+
+In February 2013, about a year and a half after initially writing Bindery,
+I discovered the [Python Epub Builder][pyepub], written by (apparently)
+Bin Tan. It was more complete than Bindery was at the time, and it inspired
+me to work on Bindery again, and gave me some valuable ideas.
+
 [adobe indesign]: http://www.adobe.com/products/indesign.html
 [asciidoc]: http://www.methods.co.nz/asciidoc/
 [best software writing]: http://www.apress.com/9781590595008
@@ -123,6 +128,7 @@ Bindery is targeted at electronic books only.
 [johnson dt2]: http://boingboing.net/2009/01/27/diy-how-to-write-a-b.html
 [markdown]: http://daringfireball.net/projects/markdown/
 [microsoft word]: http://office.microsoft.com/word/
+[pyepub]: http://code.google.com/p/python-epub-builder/
 [rake]: http://rake.rubyforge.org/
 [ruby]: http://ruby-lang.org/
 [sproutcore]: http://www.sproutcore.com/

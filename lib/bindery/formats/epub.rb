@@ -35,7 +35,7 @@ module Bindery
       def initialize(book)
         self.book = book
         book.extend BookMethods
-        book.chapters.each{|chapter| chapter.extend ChapterMethods}
+        book.divisions.each{|division| division.extend DivisionMethods}
         self.manifest_entries = []
       end
       
@@ -48,8 +48,8 @@ module Bindery
           zipfile.write_file 'META-INF/container.xml', container
           
           # also frontmatter, backmatter
-          book.chapters.each do |chapter|
-            write_chapter(chapter, zipfile)
+          book.divisions.each do |division|
+            write_division(division, zipfile)
           end
           
           zipfile.mkdir 'css'
@@ -93,7 +93,7 @@ module Bindery
           }
           
           xm.manifest {
-            book.chapters.each{|chapter| xm.item 'id'=>chapter.epub_id, 'href'=>chapter.epub_output_file, 'media-type'=>'application/xhtml+xml'}
+            book.divisions.each{|division| division.write_item(xm)}
             # also frontmatter, backmatter
             xm.item 'id'=>'stylesheet', 'href'=>'css/book.css', 'media-type'=>'text/css'
             manifest_entries.each do |entry|
@@ -104,7 +104,7 @@ module Bindery
           }
           
           xm.spine('toc'=>'ncx') {
-            book.chapters.each{|chapter| xm.itemref 'idref'=>chapter.epub_id}
+            book.divisions.each{|division| division.write_itemref(xm)}
           }
           
           # xm.guide {
@@ -134,36 +134,31 @@ module Bindery
           }
           
           xm.navMap {
-            play_order = 1
+            play_order = 0
             
             # also frontmatter, backmatter
-            book.chapters.each do |chapter|
-              xm.navPoint('class'=>'chapter', 'id'=>chapter.epub_id, 'playOrder'=>play_order) {
-                xm.navLabel {
-                  xm.text chapter.title
-                }
-                xm.content 'src'=>chapter.epub_output_file
-              }
+            book.divisions.each do |division|
               play_order += 1
+              play_order = division.write_navpoint(xm, play_order)
             end
           }
         }
       end
       
-      def write_chapter(chapter, zipfile)
+      def write_division(division, zipfile)
         save_options = Nokogiri::XML::Node::SaveOptions
-        File.open(chapter.file, 'r:UTF-8') do |ch_in|
+        File.open(division.file, 'r:UTF-8') do |ch_in|
           doc = Nokogiri.HTML(ch_in.read)
-          include_images(doc, zipfile) if chapter.include_images?
-          zipfile.get_output_stream(chapter.epub_output_file) do |ch_out|
-            if chapter.body_only?
-              # FIXME: must HTML-escape the chapter title
+          include_images(doc, zipfile) if division.include_images?
+          zipfile.get_output_stream(division.epub_output_file) do |ch_out|
+            if division.body_only?
+              # FIXME: must HTML-escape the division title
               ch_out.write %{|<?xml version="1.0" encoding="UTF-8" ?>
                              |<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
                              |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
                              |<head>
                              |  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-                             |  <title>#{chapter.title}</title>
+                             |  <title>#{division.title}</title>
                              |  <link rel="stylesheet" href="css/book.css" type="text/css" />
                              |</head>
                              |}.strip_margin
@@ -175,6 +170,9 @@ module Bindery
             end
           end
         end
+        division.divisions.each do |div|
+          write_division(div, zipfile)
+        end
       end
       
       def include_images(doc, zipfile)
@@ -184,13 +182,17 @@ module Bindery
           url = img['src']
           img_fn = make_image_file_name(zipfile, url)
           # TODO: These images should be cached somewhere for multi-format runs
-          open(url, 'r') do |is|
-            zipfile.get_output_stream(img_fn) do |os|
-              os.write is.read
+          begin
+            open(url, 'r') do |is|
+              zipfile.get_output_stream(img_fn) do |os|
+                os.write is.read
+              end
             end
+            add_manifest_entry(img_fn)
+            img['src'] = img_fn
+          rescue OpenURI::HTTPError => ex
+            puts "Image fetch failed: #{ex.message} (#{url})"
           end
-          add_manifest_entry(img_fn)
-          img['src'] = img_fn
         end
       end
       
@@ -291,7 +293,7 @@ module Bindery
         end
         
         def depth
-          1
+          (divisions.map(&:depth) + [0]).max
         end
         
         def ident
@@ -299,13 +301,62 @@ module Bindery
         end
       end
       
-      module ChapterMethods
+      module DivisionMethods
+
+        def self.extended(obj)
+          obj.divisions.each{|division| division.extend DivisionMethods}
+        end
+          
         def epub_id
           @epub_id ||= File.stemname(file)
         end
         
         def epub_output_file
           @epub_output_file ||= "#{epub_id}.xhtml"
+        end
+
+        def depth
+          (divisions.map(&:depth) + [0]).max + 1
+        end
+
+        def write_item(xm)
+          xm.item('id' => epub_id,
+                  'href' => epub_output_file,
+                  'media-type' => 'application/xhtml+xml')
+          divisions.each{|div| div.write_item(xm)}
+        end
+
+        def write_itemref(xm)
+          xm.itemref('idref' => epub_id)
+          divisions.each{|div| div.write_itemref(xm)}
+        end
+
+        def write_navpoint(xm, play_order)
+          xm.navPoint('class'=>'chapter', 'id'=>epub_id, 'playOrder'=>play_order) {
+            xm.navLabel {
+              xm.text title
+            }
+            xm.content 'src'=>epub_output_file
+            divisions.each do |division|
+              play_order += 1
+              play_order = division.write_navpoint(xm, play_order)
+            end
+          }
+          play_order
+        end
+
+      end
+      
+      module MetadataMethods
+        def to_xml(builder)
+          builder.meta(options.merge(:name => name, :content => value))
+          %{<dc:#{name}>#{value}</dc:#{name}>}
+        end
+      end
+      
+      module DublinMetadataMethods
+        def to_xml(builder)
+          builder.dc name, value, options
         end
       end
     end
