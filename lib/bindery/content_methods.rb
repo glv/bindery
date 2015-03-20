@@ -31,6 +31,10 @@ module Bindery
     def appendix(title, filename, options={}, &block)
       div('appendix', title, filename, options, &block)
     end
-    
+
+    def index(title, filename, options={}, &block)
+      div('index', title, filename, options, &block)
+    end
+
   end
 end
