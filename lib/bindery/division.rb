@@ -6,14 +6,14 @@ module Bindery
     attr_accessor :options
 
     include ContentMethods
-    
+
     def initialize(div_type, title, file, options)
       self.div_type = div_type
       self.title = title
       self.file = file
       self.options = options
     end
-    
+
     def valid?
       true
       # ??? title specified? Is this required by the spec? Think about
@@ -25,17 +25,17 @@ module Bindery
       #   chapters that would break up the text flow?
       # file exists, readable
       # file content properly formed?  Does that matter?  Can we
-      #   verify it? 
+      #   verify it?
     end
 
     def divisions
       @divisions ||= []
     end
-    
+
     def body_only?
       options.fetch(:body_only, true)
     end
-    
+
     def include_images?
       options.fetch(:include_images, true)
     end

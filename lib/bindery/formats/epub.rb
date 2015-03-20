@@ -5,7 +5,7 @@ require 'nokogiri'
 
 module Bindery
   module Formats
-    
+
     # Builds an EPUB book file from the book description.
     #
     # The {EPUB Wikipedia entry}[http://en.wikipedia.org/wiki/EPUB] provides a nice, concise overview of the EPUB format.
@@ -20,25 +20,25 @@ module Bindery
     # * Details of the format of other files allowed in EPUB documents are found in
     #   {Open Publication Structure (OPS) 2.0.1 - Recommended Specification}[http://idpf.org/epub/20/spec/OPS_2.0.1_draft.htm].
     class Epub
-      
+
       MimeTypes = {
         '.jpg' => 'image/jpeg',
         '.png' => 'image/png',
         '.gif' => 'image/gif',
       }
-      
+
       class ManifestEntry < Struct.new(:file_name, :xml_id, :mime_type)
       end
-      
+
       attr_accessor :book, :manifest_entries
-      
+
       def initialize(book)
         self.book = book
         book.extend BookMethods
         book.divisions.each{|division| division.extend DivisionMethods}
         self.manifest_entries = []
       end
-      
+
       def generate
         File.delete(book.epub_output_file) if File.exist?(book.epub_output_file)
         Zip::ZipFile.open(book.epub_output_file, Zip::ZipFile::CREATE) do |zipfile|
@@ -46,12 +46,12 @@ module Bindery
           zipfile.write_uncompressed_file 'mimetype', mimetype
           zipfile.mkdir 'META-INF'
           zipfile.write_file 'META-INF/container.xml', container
-          
+
           # also frontmatter, backmatter
           book.divisions.each do |division|
             write_division(division, zipfile)
           end
-          
+
           zipfile.mkdir 'css'
           zipfile.write_file 'css/book.css', stylesheet
 
@@ -59,13 +59,13 @@ module Bindery
           zipfile.write_file 'book.ncx', ncx
         end
       end
-            
+
       def mimetype
         # the mimetype file must be the first file in the archive
         # it must be ASCII, uncompressed, and unencrypted
         'application/epub+zip'
       end
-      
+
       def container
         %q{|<?xml version="1.0" encoding="UTF-8" ?>
            |<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -75,23 +75,23 @@ module Bindery
            |</container>
            |}.strip_margin
       end
-      
+
       def opf
         xm = Builder::XmlMarkup.new(:indent => 2)
         xm.instruct!
         xm.package('version'=>'2.0', 'xmlns'=>'http://www.idpf.org/2007/opf', 'unique-identifier'=>'BookId') {
-          
+
           xm.metadata('xmlns:dc'=>'http://purl.org/dc/elements/1.1/', 'xmlns:opf'=>'http://www.idpf.org/2007/opf') {
             # required elements
             xm.dc :title, book.full_title
             xm.dc :language, book.language
             xm.dc :identifier, book.url, ident_options('opf:scheme'=>'URL') if book.url
-            xm.dc :identifier, book.isbn, ident_options('opf:scheme'=>'ISBN') if book.isbn            
-            
+            xm.dc :identifier, book.isbn, ident_options('opf:scheme'=>'ISBN') if book.isbn
+
             # optional elements
             xm.dc :creator, book.author, 'opf:role'=>'aut' if book.author
           }
-          
+
           xm.manifest {
             book.divisions.each{|division| division.write_item(xm)}
             # also frontmatter, backmatter
@@ -102,17 +102,17 @@ module Bindery
             # xm.item 'id'=>'myfont', 'href'=>'css/myfont.otf', 'media-type'=>'application/x-font-opentype'
             xm.item 'id'=>'ncx', 'href'=>'book.ncx', 'media-type'=>'application/x-dtbncx+xml'
           }
-          
+
           xm.spine('toc'=>'ncx') {
             book.divisions.each{|division| division.write_itemref(xm)}
           }
-          
+
           # xm.guide {
           #   xm.reference 'type'='loi', 'title'=>'List of Illustrations', 'href'=>'appendix.html#figures'
           # }
         }
       end
-      
+
       def ncx
         xm = Builder::XmlMarkup.new(:indent => 2)
         xm.instruct!
@@ -124,18 +124,18 @@ module Bindery
             xm.meta 'name'=>'dtb:totalPageCount', 'content'=>0
             xm.meta 'name'=>'dtb:maxPageNumber', 'content'=>0
           }
-          
+
           xm.docTitle {
             xm.text book.full_title
           }
-          
+
           xm.docAuthor {
             xm.text book.author
           }
-          
+
           xm.navMap {
             play_order = 0
-            
+
             # also frontmatter, backmatter
             book.divisions.each do |division|
               play_order += 1
@@ -174,7 +174,7 @@ module Bindery
           write_division(div, zipfile)
         end
       end
-      
+
       def include_images(doc, zipfile)
         # TODO: where else can images appear? Style sheets?
         zipfile.mkdir('images') unless zip_dir_exists?(zipfile, 'images')
@@ -195,12 +195,12 @@ module Bindery
           end
         end
       end
-      
+
       def add_manifest_entry(file_name)
         xml_id, ext = File.base_parts(file_name.gsub('/', '-'))
         manifest_entries << ManifestEntry.new(file_name, xml_id, MimeTypes[ext])
       end
-      
+
       def cover
         xm = Builder::XmlMarkup.new(:indent => 2)
         xm.instruct!
@@ -223,7 +223,7 @@ module Bindery
           }
         }
       end
-      
+
       def stylesheet
         # This is a start, but needs work.
         %q{|@page {
@@ -257,7 +257,7 @@ module Bindery
            |h3.section_title {text-align: center;}
            |}.strip_margin
       end
-      
+
       def ident_options(opts)
         if book.isbn
           return opts.merge('id'=>'BookId') if opts['opf:scheme'] == 'ISBN'
@@ -266,16 +266,16 @@ module Bindery
         end
         opts
       end
-      
+
       def zip_dir_exists?(zipfile, dirname)
         dirname = "#{dirname}/" unless dirname =~ %r{/$}
         zipfile.entries.any?{|e| e.directory? && e.name == dirname}
       end
-            
+
       def zip_file_exists?(zipfile, filename)
         zipfile.entries.any?{|e| e.name == filename}
       end
-            
+
       def make_image_file_name(zipfile, url)
         stem, ext = File.base_parts(url)
         filename = "images/#{stem}#{ext}"
@@ -286,31 +286,31 @@ module Bindery
         end
         filename
       end
-      
+
       module BookMethods
         def epub_output_file
           @epub_output_file ||= "#{output}.epub"
         end
-        
+
         def depth
           (divisions.map(&:depth) + [0]).max
         end
-        
+
         def ident
           isbn || url
         end
       end
-      
+
       module DivisionMethods
 
         def self.extended(obj)
           obj.divisions.each{|division| division.extend DivisionMethods}
         end
-          
+
         def epub_id
           @epub_id ||= File.stemname(file)
         end
-        
+
         def epub_output_file
           @epub_output_file ||= "#{epub_id}.xhtml"
         end
@@ -346,14 +346,14 @@ module Bindery
         end
 
       end
-      
+
       module MetadataMethods
         def to_xml(builder)
           builder.meta(options.merge(:name => name, :content => value))
           %{<dc:#{name}>#{value}</dc:#{name}>}
         end
       end
-      
+
       module DublinMetadataMethods
         def to_xml(builder)
           builder.dc name, value, options

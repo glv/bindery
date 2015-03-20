@@ -19,15 +19,15 @@ module Bindery
     def chapter(title, filename, options={}, &block)
       div('chapter', title, filename, options, &block)
     end
-    
+
     def section(title, filename, options={}, &block)
       div('section', title, filename, options, &block)
     end
-    
+
     def part(title, filename, options={}, &block)
       div('part', title, filename, options, &block)
     end
-    
+
     def appendix(title, filename, options={}, &block)
       div('appendix', title, filename, options, &block)
     end
