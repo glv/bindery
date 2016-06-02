@@ -2,6 +2,7 @@ require 'builder'
 require 'zip'
 require 'bindery/extensions/zip_file'
 require 'nokogiri'
+require 'uri'
 
 module Bindery
   module Formats
@@ -277,7 +278,8 @@ module Bindery
       end
 
       def make_image_file_name(zipfile, url)
-        stem, ext = File.base_parts(url)
+        uri = URI(url)
+        stem, ext = File.base_parts(uri.path)
         filename = "images/#{stem}#{ext}"
         n = 0
         while zip_file_exists?(zipfile, filename)
