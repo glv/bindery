@@ -2,6 +2,7 @@ require 'builder'
 require 'zip'
 require 'bindery/extensions/zip_file'
 require 'nokogiri'
+require 'open-uri'
 require 'uri'
 
 module Bindery
@@ -20,13 +21,7 @@ module Bindery
     #   {Section 8 of "Specifications for the Digital Talking Book"}[http://www.niso.org/workrooms/daisy/Z39-86-2005.html#NCX].
     # * Details of the format of other files allowed in EPUB documents are found in
     #   {Open Publication Structure (OPS) 2.0.1 - Recommended Specification}[http://idpf.org/epub/20/spec/OPS_2.0.1_draft.htm].
-    class Epub
-
-      MimeTypes = {
-        '.jpg' => 'image/jpeg',
-        '.png' => 'image/png',
-        '.gif' => 'image/gif',
-      }
+    module EpubGeneral
 
       class ManifestEntry < Struct.new(:file_name, :xml_id, :mime_type)
       end
@@ -35,9 +30,15 @@ module Bindery
 
       def initialize(book)
         self.book = book
-        book.extend BookMethods
-        book.divisions.each{|division| division.extend DivisionMethods}
         self.manifest_entries = []
+      end
+
+      def mime_types
+        {
+          '.jpg' => 'image/jpeg',
+          '.png' => 'image/png',
+          '.gif' => 'image/gif',
+        }
       end
 
       def generate
@@ -57,7 +58,7 @@ module Bindery
           zipfile.write_file 'css/book.css', stylesheet
 
           zipfile.write_file 'book.opf', opf
-          zipfile.write_file 'book.ncx', ncx
+          generate_special(zipfile)
         end
       end
 
@@ -80,33 +81,10 @@ module Bindery
       def opf
         xm = Builder::XmlMarkup.new(:indent => 2)
         xm.instruct!
-        xm.package('version'=>'2.0', 'xmlns'=>'http://www.idpf.org/2007/opf', 'unique-identifier'=>'BookId') {
-
-          xm.metadata('xmlns:dc'=>'http://purl.org/dc/elements/1.1/', 'xmlns:opf'=>'http://www.idpf.org/2007/opf') {
-            # required elements
-            xm.dc :title, book.full_title
-            xm.dc :language, book.language
-            xm.dc :identifier, book.url, ident_options('opf:scheme'=>'URL') if book.url
-            xm.dc :identifier, book.isbn, ident_options('opf:scheme'=>'ISBN') if book.isbn
-
-            # optional elements
-            xm.dc :creator, book.author, 'opf:role'=>'aut' if book.author
-          }
-
-          xm.manifest {
-            book.divisions.each{|division| division.write_item(xm)}
-            # also frontmatter, backmatter
-            xm.item 'id'=>'stylesheet', 'href'=>'css/book.css', 'media-type'=>'text/css'
-            manifest_entries.each do |entry|
-              xm.item 'id'=>entry.xml_id, 'href'=>entry.file_name, 'media-type'=>entry.mime_type
-            end
-            # xm.item 'id'=>'myfont', 'href'=>'css/myfont.otf', 'media-type'=>'application/x-font-opentype'
-            xm.item 'id'=>'ncx', 'href'=>'book.ncx', 'media-type'=>'application/x-dtbncx+xml'
-          }
-
-          xm.spine('toc'=>'ncx') {
-            book.divisions.each{|division| division.write_itemref(xm)}
-          }
+        xm.package('version'=>epub_version, 'xmlns'=>'http://www.idpf.org/2007/opf', 'unique-identifier'=>'BookId') {
+          write_opf_metadata(xm)
+          write_opf_manifest(xm)
+          write_opf_spine(xm)
 
           # xm.guide {
           #   xm.reference 'type'='loi', 'title'=>'List of Illustrations', 'href'=>'appendix.html#figures'
@@ -114,60 +92,28 @@ module Bindery
         }
       end
 
-      def ncx
-        xm = Builder::XmlMarkup.new(:indent => 2)
-        xm.instruct!
-        xm.declare!(:DOCTYPE, :ncx, :PUBLIC, '-//NISO//DTD ncx 2005-1//EN', 'http://www.daisy.org/z3986/2005/ncx-2005-1.dtd')
-        xm.ncx('version'=>'2005-1', 'xml:lang'=>'en', 'xmlns'=>'http://www.daisy.org/z3986/2005/ncx/') {
-          xm.head {
-            xm.meta 'name'=>'dtb:uid', 'content'=>book.ident
-            xm.meta 'name'=>'dtb:depth', 'content'=>book.depth
-            xm.meta 'name'=>'dtb:totalPageCount', 'content'=>0
-            xm.meta 'name'=>'dtb:maxPageNumber', 'content'=>0
-          }
-
-          xm.docTitle {
-            xm.text book.full_title
-          }
-
-          xm.docAuthor {
-            xm.text book.author
-          }
-
-          xm.navMap {
-            play_order = 0
-
-            # also frontmatter, backmatter
-            book.divisions.each do |division|
-              play_order += 1
-              play_order = division.write_navpoint(xm, play_order)
-            end
-          }
+      def write_opf_manifest(xm)
+        xm.manifest {
+          write_toc_manifest_entry(xm)
+          book.divisions.each{|division| division.write_item(xm)}
+          # also frontmatter, backmatter
+          xm.item 'id'=>'stylesheet', 'href'=>'css/book.css', 'media-type'=>'text/css'
+          manifest_entries.each do |entry|
+            xm.item 'id'=>entry.xml_id, 'href'=>entry.file_name, 'media-type'=>entry.mime_type
+          end
+          # xm.item 'id'=>'myfont', 'href'=>'css/myfont.otf', 'media-type'=>'application/x-font-opentype'
         }
       end
-      
+
       def write_division(division, zipfile)
-        save_options = Nokogiri::XML::Node::SaveOptions
         File.open(division.file, 'r:UTF-8') do |ch_in|
           doc = Nokogiri.HTML(ch_in.read)
-          include_images(doc, zipfile) if division.include_images?
+          include_images(doc, zipfile, division.options[:url]) if division.include_images?
           zipfile.get_output_stream(division.epub_output_file) do |ch_out|
             if division.body_only?
-              # FIXME: must HTML-escape the division title
-              ch_out.write %{|<?xml version="1.0" encoding="UTF-8" ?>
-                             |<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-                             |<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-                             |<head>
-                             |  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-                             |  <title>#{division.title}</title>
-                             |  <link rel="stylesheet" href="css/book.css" type="text/css" />
-                             |</head>
-                             |}.strip_margin
-              ch_out.write doc.at('body').serialize(:save_with => (save_options::AS_XHTML | save_options::NO_DECLARATION))
-              ch_out.write %{|</html>
-                             |}.strip_margin
+              wrap_body(ch_out, division, doc)
             else
-              ch_out.write doc.serialize(:save_with => save_options::AS_XHTML)
+              ch_out.write doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML)
             end
           end
         end
@@ -176,15 +122,23 @@ module Bindery
         end
       end
 
-      def include_images(doc, zipfile)
+      def include_images(doc, zipfile, base_url)
         # TODO: where else can images appear? Style sheets?
-        zipfile.mkdir('images') unless zip_dir_exists?(zipfile, 'images')
+
         doc.css('img').each do |img|
           url = img['src']
           img_fn = make_image_file_name(zipfile, url)
           # TODO: These images should be cached somewhere for multi-format runs
+
+          full_url = if base_url.nil?
+                       url
+                     else
+                       URI.join(base_url, url)
+                     end
+
           begin
-            open(url, 'r') do |is|
+            open(full_url, 'r') do |is|
+              zipfile.mkdir('images') unless zip_dir_exists?(zipfile, 'images')
               zipfile.get_output_stream(img_fn) do |os|
                 os.write is.read
               end
@@ -199,7 +153,7 @@ module Bindery
 
       def add_manifest_entry(file_name)
         xml_id, ext = File.base_parts(file_name.gsub('/', '-'))
-        manifest_entries << ManifestEntry.new(file_name, xml_id, MimeTypes[ext])
+        manifest_entries << ManifestEntry.new(file_name, xml_id, mime_types[ext])
       end
 
       def cover
@@ -227,45 +181,39 @@ module Bindery
 
       def stylesheet
         # This is a start, but needs work.
-        %q{|@page {
-           |  margin-top: 0.8em;
-           |  margin-bottom: 0.8em;}
-           |
-           |body {
-           |  margin-left: 1em;
-           |  margin-right: 1em;
-           |  padding: 0;}
-           |
-           |h2 {
-           |  padding-top:0;
-           |  display:block;}
-           |
-           |p {
-           |  margin-top: 0.3em;
-           |  margin-bottom: 0.3em;
-           |  text-indent: 1.0em;
-           |  text-align: justify;}
-           |
-           |body > p:first-child {text-indent: 0}
-           |div.text p:first-child {text-indent: 0}
-           |
-           |blockquote p, li p {
-           |  text-indent: 0.0em;
-           |  text-align: left;}
-           |
-           |div.chapter {padding-top: 3.0em;}
-           |div.part {padding-top: 3.0em;}
-           |h3.section_title {text-align: center;}
-           |}.strip_margin
-      end
+        return book.stylesheet if book.stylesheet
 
-      def ident_options(opts)
-        if book.isbn
-          return opts.merge('id'=>'BookId') if opts['opf:scheme'] == 'ISBN'
-        else
-          return opts.merge('id'=>'BookId') if opts['opf:scheme'] == 'URL'
-        end
-        opts
+        base_stylesheet = %q{|@page {
+                             |  margin-top: 0.8em;
+                             |  margin-bottom: 0.8em;}
+                             |
+                             |body {
+                             |  margin-left: 1em;
+                             |  margin-right: 1em;
+                             |  padding: 0;}
+                             |
+                             |h2 {
+                             |  padding-top:0;
+                             |  display:block;}
+                             |
+                             |p {
+                             |  margin-top: 0.3em;
+                             |  margin-bottom: 0.3em;
+                             |  text-indent: 1.0em;
+                             |  text-align: justify;}
+                             |
+                             |body > p:first-child {text-indent: 0}
+                             |div.text p:first-child {text-indent: 0}
+                             |
+                             |blockquote p, li p {
+                             |  text-indent: 0.0em;
+                             |  text-align: left;}
+                             |
+                             |div.chapter {padding-top: 3.0em;}
+                             |div.part {padding-top: 3.0em;}
+                             |h3.section_title {text-align: center;}
+                             |}.strip_margin
+        [base_stylesheet, book.extra_stylesheet].compact.join("\n")
       end
 
       def zip_dir_exists?(zipfile, dirname)
@@ -305,10 +253,6 @@ module Bindery
 
       module DivisionMethods
 
-        def self.extended(obj)
-          obj.divisions.each{|division| division.extend DivisionMethods}
-        end
-
         def epub_id
           @epub_id ||= File.stemname(file)
         end
@@ -332,21 +276,6 @@ module Bindery
           xm.itemref('idref' => epub_id)
           divisions.each{|div| div.write_itemref(xm)}
         end
-
-        def write_navpoint(xm, play_order)
-          xm.navPoint('class'=>'chapter', 'id'=>epub_id, 'playOrder'=>play_order) {
-            xm.navLabel {
-              xm.text title
-            }
-            xm.content 'src'=>epub_output_file
-            divisions.each do |division|
-              play_order += 1
-              play_order = division.write_navpoint(xm, play_order)
-            end
-          }
-          play_order
-        end
-
       end
 
       module MetadataMethods

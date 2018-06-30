@@ -39,5 +39,13 @@ module Bindery
     def include_images?
       options.fetch(:include_images, true)
     end
+
+    def to_s
+      "#<Bindery::Division #{div_type} '#{title}'"
+    end
+
+    def inspect
+      to_s
+    end
   end
 end

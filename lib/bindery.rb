@@ -8,4 +8,6 @@ require 'bindery/content_methods'
 require 'bindery/book_builder'
 require 'bindery/division'
 
-require 'bindery/formats/epub'
+require 'bindery/formats/epub_general'
+require 'bindery/formats/epub2'
+require 'bindery/formats/epub3'

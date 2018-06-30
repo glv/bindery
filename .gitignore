@@ -7,3 +7,4 @@ pkg/*
 *.epub
 rspec.txt
 coverage
+.DS_Store

@@ -7,6 +7,9 @@ module Bindery
     # [:body_only] the file contains only the body of the XHTML document,
     #              and Bindery should wrap it to create a valid document.
     #              Defaults to true.
+    # [:url] the URL from which the division was fetched. May be needed to
+    #        provide a base URL for relative image URLs found within the
+    #        division body.
     def div(div_type, title, filename, options={})
       options = {:body_only => true}.merge(options)
       raise ArgumentError, "title not specified" if title.nil?
