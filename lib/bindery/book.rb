@@ -39,6 +39,10 @@ module Bindery
       @extra_stylesheet = css
     end
 
+    def javascript_files
+      @javascript_files ||= []
+    end
+
     def configuration_valid?
       true
       # formats specified or correctly defaulted

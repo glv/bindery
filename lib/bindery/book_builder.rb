@@ -109,6 +109,10 @@ module Bindery
       book.extra_stylesheet = css
     end
 
+    def javascript(filename)
+      book.javascript_files << filename
+    end
+
   end
 
 end

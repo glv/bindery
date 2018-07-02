@@ -105,7 +105,13 @@ module Bindery
                         |  <link rel="stylesheet" href="css/book.css" type="text/css" />
                         |</head>
                         |}.strip_margin
-        div_out.write doc.at('body').serialize(:save_with => (save_options::AS_XHTML | save_options::NO_DECLARATION))
+        body = doc.at('body')
+        book.javascript_files.each do |javascript_file|
+          body.add_child %Q{
+            <script src="js/#{javascript_file}" type="text/javascript" charset="utf-8"></script>
+          }
+        end
+        div_out.write body.serialize(:save_with => (save_options::AS_XHTML | save_options::NO_DECLARATION))
         div_out.write %{|</html>
                         |}.strip_margin
       end

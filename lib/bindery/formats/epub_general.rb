@@ -57,6 +57,13 @@ module Bindery
           zipfile.mkdir 'css'
           zipfile.write_file 'css/book.css', stylesheet
 
+          unless book.javascript_files.empty?
+            zipfile.mkdir 'js'
+            book.javascript_files.each do |javascript_file|
+              zipfile.write_file "js/#{javascript_file}", IO.read(javascript_file)
+            end
+          end
+
           zipfile.write_file 'book.opf', opf
           generate_special(zipfile)
         end
@@ -95,9 +102,18 @@ module Bindery
       def write_opf_manifest(xm)
         xm.manifest {
           write_toc_manifest_entry(xm)
-          book.divisions.each{|division| division.write_item(xm)}
+
+          extra_properties = if book.javascript_files.empty?
+                               {}
+                             else
+                               {'properties' => 'scripted'}
+                             end
+          book.divisions.each{|division| division.write_item(xm, extra_properties)}
           # also frontmatter, backmatter
           xm.item 'id'=>'stylesheet', 'href'=>'css/book.css', 'media-type'=>'text/css'
+          book.javascript_files.each do |javascript_file|
+            xm.item 'id'=>javascript_file, 'href'=>"js/#{javascript_file}", 'media-type'=>'text/javascript'
+          end
           manifest_entries.each do |entry|
             xm.item 'id'=>entry.xml_id, 'href'=>entry.file_name, 'media-type'=>entry.mime_type
           end
@@ -113,6 +129,12 @@ module Bindery
             if division.body_only?
               wrap_body(ch_out, division, doc)
             else
+              body = doc.at('body')
+              book.javascript_files.each do |javascript_file|
+                body.add_child %Q{
+                  <script src="js/#{javascript_file}" type="text/javascript" charset="utf-8"></script>
+                }
+              end
               ch_out.write doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XHTML)
             end
           end
@@ -265,11 +287,11 @@ module Bindery
           (divisions.map(&:depth) + [0]).max + 1
         end
 
-        def write_item(xm)
-          xm.item('id' => epub_id,
-                  'href' => epub_output_file,
-                  'media-type' => 'application/xhtml+xml')
-          divisions.each{|div| div.write_item(xm)}
+        def write_item(xm, extra_properties={})
+          xm.item extra_properties.merge('id' => epub_id,
+                                         'href' => epub_output_file,
+                                         'media-type' => 'application/xhtml+xml')
+          divisions.each{|div| div.write_item(xm, extra_properties)}
         end
 
         def write_itemref(xm)
