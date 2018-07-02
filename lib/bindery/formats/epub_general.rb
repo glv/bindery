@@ -219,16 +219,19 @@ module Bindery
                              |  display:block;}
                              |
                              |p {
-                             |  margin-top: 0.3em;
-                             |  margin-bottom: 0.3em;
-                             |  text-indent: 1.0em;
+                             |  margin-top: 0;
+                             |  margin-bottom: 0;
+                             |  text-indent: 2.0em;
                              |  text-align: justify;}
                              |
+                             |code {
+                             |  text-indent: 0;}
+                             |
+                             |:not(p) + p {text-indent: 0}
                              |body > p:first-child {text-indent: 0}
                              |div.text p:first-child {text-indent: 0}
                              |
                              |blockquote p, li p {
-                             |  text-indent: 0.0em;
                              |  text-align: left;}
                              |
                              |div.chapter {padding-top: 3.0em;}
