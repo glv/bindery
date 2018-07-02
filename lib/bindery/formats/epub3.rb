@@ -76,7 +76,7 @@ module Bindery
         xm.html('xmlns' => 'http://www.w3.org/1999/xhtml',
                 'xmlns:epub' => 'http://www.idpf.org/2007/ops') {
           xm.head {
-            xm.title book.full_title
+            xm.title book.full_title.strip
           }
           xm.body {
             xm.section('epub:type' => 'frontmatter toc') {
@@ -146,9 +146,7 @@ module Bindery
 
         def write_toc_entry(xm)
           xm.li('id' => epub_id) {
-            xm.a('href' => epub_output_file) {
-              xm.text! title
-            }
+            xm.a(title.strip, 'href' => epub_output_file)
             unless divisions.empty?
               xm.ol {
                 divisions.each do |division|
